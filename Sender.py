@@ -38,7 +38,7 @@ def send_data():
         buffer = dataBuffer.get()
         if buffer is None:
             break
-        sock.sendto(str(buffer).encode(),serverAddressPort)
+        sock.sendto(str(buffer).encode(), serverAddressPort)
         dataBuffer.task_done()
 
 
