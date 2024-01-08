@@ -33,8 +33,10 @@ def Capinit(cap, pose, opcode):
                         # 主数据预处理
                         h, w, c = img.shape  # h,w,c 获得当前摄像头显示图像的宽高比
                         cx, cy = lm.x * w, lm.y * 480
+                        if opcode == 0:
+                            continue
                         if opcode == 1:
-                            values.append(str(time.time()-begin) + ',' + str(cy))
+                            values.append(str(time.time() - begin) + ',' + str(cy))
                         if opcode == 2:
                             # 使用一阶低通滤波器
                             if sequenceNum == 1:
@@ -67,6 +69,11 @@ def Capinit(cap, pose, opcode):
             break
     cap.release()
     cv2.destroyAllWindows()
+
+# 第0轮
+cap = cv2.VideoCapture("C:/Users/ALIENWARE/Desktop/Study/AI/Tewst.mp4")  # 用外置摄像头实时捕捉
+cap.set(cv2.CAP_PROP_FPS, 30)
+Capinit(cap, pose, 0)
 
 # 第1轮
 cap = cv2.VideoCapture("C:/Users/ALIENWARE/Desktop/Study/AI/Tewst.mp4")  # 用外置摄像头实时捕捉
@@ -112,7 +119,9 @@ plt.title('Time Sequences vs Left Shoulder Keypoint Y-Position')
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=4)
 plt.grid()
 plt.show()
-a = np.mean(numOrders2, numOrders1)
-b = np.mean(numOrders3, numOrders1)
-c = np.mean(numOrders4, numOrders1)
-print(a, b, c)
+
+d = np.mean(np.array(numOrders2) - np.array(numOrders1))
+e = np.mean(np.array(numOrders3) - np.array(numOrders1))
+f = np.mean(np.array(numOrders4) - np.array(numOrders1))
+
+print(d, e, f)
