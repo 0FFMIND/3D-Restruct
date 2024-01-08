@@ -88,12 +88,12 @@ Capinit(cap, pose, 2)
 # 第3轮
 cap = cv2.VideoCapture("C:/Users/ALIENWARE/Desktop/Study/AI/Tewst.mp4")  # 用外置摄像头实时捕捉
 cap.set(cv2.CAP_PROP_FPS, 30)
-Capinit(cap, pose, 3)
+Capinit(cap, pose, 4)
 
 # 第4轮
 cap = cv2.VideoCapture("C:/Users/ALIENWARE/Desktop/Study/AI/Tewst.mp4")  # 用外置摄像头实时捕捉
 cap.set(cv2.CAP_PROP_FPS, 30)
-Capinit(cap, pose, 4)
+Capinit(cap, pose, 3)
 
 def Flatten(values, numOrders, numCys):
     for value in values:
