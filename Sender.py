@@ -17,15 +17,16 @@ pTime = 0  # 用于帧率检查
 jointNum = 33  # 会跟踪33个关节点
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # 创建UDP套接字
 serverAddressPort = ("127.0.0.1", 5053)  # 设置本地/外部ip，并使用5053端口单向广播数据
+order = 0
 
 # 引入Kalman滤波器进行线性滤波，过滤掉噪声和干扰的影响，通过实际测量和状态预测进行预测修正
-kalmanParamQ = 0.000070  # Q表示噪声协方差，Q较大系统会认为模型不准
-kalmanParamR = 0.000095  # R表示测量协方差，R较大系统会认为观察不准，这里R>Q，认为模型暂时准确
+kalmanParamQ = 0.070  # Q表示噪声协方差，Q较大系统会认为模型不准
+kalmanParamR = 0.095  # R表示测量协方差，R较大系统会认为观察不准，这里R>Q，认为模型暂时准确
 K = np.zeros((jointNum, 3), dtype=np.float32)
 P = np.zeros((jointNum, 3), dtype=np.float32)
 X = np.zeros((jointNum, 3), dtype=np.float32)
 # 引入低通滤波器，允许低频信号通过，从而过滤掉短暂的，突发的动作，使得关节点数据更加平稳
-lowPassParam = 0.05  # 该参数大，滤波效果差，但对数据反应快速，参数较小，滤波效果好，对数据反应较慢，故选取中间数
+lowPassParam = 0.7  # 该参数大，滤波效果差，但对数据反应快速，参数较小，滤波效果好，对数据反应较慢，故选取中间数
 # 空白数据包，每一次向接收端发一个储存6帧信息的矩阵，每一帧存储33个骨骼位点，3个维度(x,y,z)
 PrevPose3D = np.zeros((6, jointNum, 3), dtype=np.float32)
 
@@ -65,6 +66,12 @@ while True:
                     # 主数据预处理
                     h, w, c = img.shape  # h,w,c 获得当前摄像头显示图像的宽高比
                     data = np.array([lm.x * h, lm.y * w, lm.z * 1000])  # 直接获取关键点的坐标
+                    if order == 0:
+                        preData = data
+                    else:
+                        for i in range(0, 2):
+                            data[i] = data[i] * lowPassParam + (1 - lowPassParam) * preData[i]
+                    order += 1
                     '''这里1000是为了坐标匹配定义的，可以根据需求更改'''
                     # 进行卡尔曼滤波器的递归
                     K[id] = (P[id] + kalmanParamQ) / (P[id] + kalmanParamQ + kalmanParamR)
@@ -73,11 +80,7 @@ while True:
                     X[id] = smooth_kps  # 用于下一次迭代
                     # 用于滤波的数据应该是3D的，每一行代表一个关节点的x，y，z坐标
                     PrevPose3D[0, id, :] = smooth_kps  # 获得了经过卡尔曼滤波的估计值
-                    for j in range(1, 6):
-                        PrevPose3D[j, id, :] = PrevPose3D[j, id, :] * lowPassParam + PrevPose3D[j - 1, id, :] * (
-                                    1.0 - lowPassParam)
-                    # 在完成所有关键点的处理之后，将数据打包并发送
-                    sendData = ','.join(PrevPose3D[5].flatten().astype(str).tolist())
+                    sendData = ','.join(PrevPose3D[0].flatten().astype(str).tolist())
                     # print(sendData)
                     dataBuffer.put(sendData)
                     # 可视化的操作，给测试人员直观的映像
