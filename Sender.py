@@ -1,4 +1,3 @@
-import sys
 import time  # 用来帧率检查
 import cv2  # 用来进行摄像头捕捉
 import mediapipe as mp  # 导入BlazePose的Module
@@ -6,7 +5,6 @@ import threading  # 启用线程，进行并行处理的优化
 import queue  # 进程之间虽然不能共享内存，但可以通过Queue在进程之间传递数据
 import socket  # 进行UDP的基础传输
 import numpy as np  # 加入数学基本库
-import datetime
 
 # 初始化
 cap = cv2.VideoCapture(1)  # 用外置摄像头实时捕捉
@@ -71,7 +69,9 @@ while True:
                     if order == 0:
                         preData = data
                     else:
-                        data[order] = data[order] * lowPassParam + (1 - lowPassParam) * preData[order - 1]
+                        data[0] = data[0] * lowPassParam + (1 - lowPassParam) * preData[0]
+                        data[1] = data[1] * lowPassParam + (1 - lowPassParam) * preData[1]
+                        data[2] = data[2] * lowPassParam + (1 - lowPassParam) * preData[2]
                     order += 1
                     '''这里1000是为了坐标匹配定义的，可以根据需求更改'''
                     # 进行卡尔曼滤波器的递归
@@ -82,10 +82,7 @@ while True:
                     # 用于滤波的数据应该是3D的，每一行代表一个关节点的x，y，z坐标
                     PrevPose3D[0, id, :] = smooth_kps  # 获得了经过卡尔曼滤波的估计值
                     sendData = ','.join(PrevPose3D[0].flatten().astype(str).tolist())
-                    size_in_bytes = sys.getsizeof(sendData)
-                    print("sendData的大小（字节）：", size_in_bytes)
-                    send = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f') + ',' +sendData
-                    dataBuffer.put(send)
+                    dataBuffer.put(sendData)
                     # 可视化的操作，给测试人员直观的映像
                     cx, cy = int(lm.x * w), int(lm.y * h)
                     cv2.circle(img, (cx, cy), 3, (255, 0, 0), cv2.FILLED)
